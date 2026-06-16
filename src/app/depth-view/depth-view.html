@@ -1,0 +1,26 @@
+<div class="depth-header">
+  <div class="title">
+    <h2 mat-dialog-title>3D depth view</h2>
+    <span class="sub">{{ count }} events · max depth {{ maxDepth | number: '1.0-0' }} km · drag to orbit, scroll to zoom</span>
+  </div>
+  <button mat-icon-button (click)="close()" aria-label="Close">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="depth-content">
+  <div #host class="canvas-host" [class.empty]="!count">
+    @if (!count) {
+      <span>No events to plot. Adjust your filters and try again.</span>
+    }
+  </div>
+  @if (count) {
+    <div class="depth-legend">
+      <span class="legend-title">Depth</span>
+      <span><i style="background:#ef5350"></i> Shallow (&lt; 70 km)</span>
+      <span><i style="background:#ffa726"></i> Intermediate (70–300 km)</span>
+      <span><i style="background:#42a5f5"></i> Deep (&gt; 300 km)</span>
+      <span class="hint">Bubble size = magnitude · vertical axis = depth</span>
+    </div>
+  }
+</mat-dialog-content>

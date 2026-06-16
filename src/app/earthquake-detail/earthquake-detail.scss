@@ -1,0 +1,26 @@
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 6px 0;
+
+    .key {
+      color: var(--mat-sys-on-surface-variant);
+      font-weight: 500;
+    }
+  }
+
+  mat-divider {
+    margin: 4px 0;
+  }
+}
+
+.alert-green { background: #4caf50 !important; color: #fff !important; }
+.alert-yellow { background: #fdd835 !important; color: #222 !important; }
+.alert-orange { background: #fb8c00 !important; color: #fff !important; }
+.alert-red { background: #e53935 !important; color: #fff !important; }

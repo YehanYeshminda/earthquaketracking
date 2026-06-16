@@ -1,0 +1,277 @@
+<mat-sidenav-container class="shell" autosize>
+  <!-- Filter drawer (right side) -->
+  <mat-sidenav #filterDrawer mode="over" position="end" class="filter-drawer">
+    <div class="drawer-header">
+      <h2>Filters</h2>
+      <button mat-icon-button (click)="filterDrawer.close()" aria-label="Close filters">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <mat-divider />
+
+    <div class="drawer-body">
+      <mat-form-field appearance="outline">
+        <mat-label>Start date</mat-label>
+        <input matInput [matDatepicker]="startPicker" [(ngModel)]="filter.start" [max]="today" />
+        <mat-datepicker-toggle matIconSuffix [for]="startPicker" />
+        <mat-datepicker #startPicker />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>End date</mat-label>
+        <input matInput [matDatepicker]="endPicker" [(ngModel)]="filter.end" [max]="today" />
+        <mat-datepicker-toggle matIconSuffix [for]="endPicker" />
+        <mat-datepicker #endPicker />
+      </mat-form-field>
+
+      <div class="two-col">
+        <mat-form-field appearance="outline">
+          <mat-label>Min magnitude</mat-label>
+          <input matInput type="number" step="0.1" min="0" max="10" [(ngModel)]="filter.minMag" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Max magnitude</mat-label>
+          <input matInput type="number" step="0.1" min="0" max="10" [(ngModel)]="filter.maxMag" />
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Order by</mat-label>
+        <mat-select [(ngModel)]="filter.orderby">
+          <mat-option value="time">Newest first</mat-option>
+          <mat-option value="time-asc">Oldest first</mat-option>
+          <mat-option value="magnitude">Largest magnitude</mat-option>
+          <mat-option value="magnitude-asc">Smallest magnitude</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Limit</mat-label>
+        <input matInput type="number" min="1" max="20000" [(ngModel)]="filter.limit" />
+      </mat-form-field>
+
+      <mat-divider />
+
+      <div class="region-toggle">
+        <mat-slide-toggle [(ngModel)]="filter.useRegion">Region bounding box</mat-slide-toggle>
+      </div>
+
+      @if (filter.useRegion) {
+        <div class="presets">
+          @for (p of regionPresets; track p.name) {
+            <button mat-stroked-button (click)="applyRegionPreset(p)">{{ p.name }}</button>
+          }
+        </div>
+        <div class="two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>Min lat</mat-label>
+            <input matInput type="number" min="-90" max="90" step="0.1" [(ngModel)]="filter.minlat" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Max lat</mat-label>
+            <input matInput type="number" min="-90" max="90" step="0.1" [(ngModel)]="filter.maxlat" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Min lon</mat-label>
+            <input matInput type="number" min="-180" max="180" step="0.1" [(ngModel)]="filter.minlon" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Max lon</mat-label>
+            <input matInput type="number" min="-180" max="180" step="0.1" [(ngModel)]="filter.maxlon" />
+          </mat-form-field>
+        </div>
+      }
+
+      <mat-divider />
+
+      <div class="region-toggle">
+        <mat-slide-toggle
+          [checked]="autoRefresh()"
+          (change)="toggleAutoRefresh($event.checked)"
+        >
+          Auto-refresh
+        </mat-slide-toggle>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Refresh interval</mat-label>
+        <mat-select
+          [value]="refreshInterval()"
+          (selectionChange)="onIntervalChange($event.value)"
+          [disabled]="!autoRefresh()"
+        >
+          <mat-option [value]="30">Every 30 seconds</mat-option>
+          <mat-option [value]="60">Every 1 minute</mat-option>
+          <mat-option [value]="300">Every 5 minutes</mat-option>
+          <mat-option [value]="900">Every 15 minutes</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="drawer-actions">
+      <button mat-button (click)="resetFilters()">Reset</button>
+      <button mat-flat-button color="primary" (click)="applyAndClose()">
+        <mat-icon>search</mat-icon> Apply
+      </button>
+    </div>
+  </mat-sidenav>
+
+  <!-- Main content: list + map -->
+  <mat-sidenav-content class="content">
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" class="top-progress" />
+    }
+
+    <div class="layout">
+      <!-- Left: event list -->
+      <aside class="event-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h2>Earthquakes</h2>
+            <span class="count">{{ visibleFeatures().length }} of {{ stats().total }} events</span>
+          </div>
+          <button mat-stroked-button (click)="toggleFilters()">
+            <mat-icon>tune</mat-icon> Filters
+          </button>
+        </div>
+
+        <div class="panel-sub">
+          <span>M{{ filter.minMag }}+ · last 7 days</span>
+          @if (lastUpdated()) {
+            <span class="updated">Updated {{ lastUpdated() | date: 'shortTime' }}</span>
+          }
+        </div>
+
+        <mat-form-field appearance="outline" class="list-search" subscriptSizing="dynamic">
+          <mat-icon matPrefix>search</mat-icon>
+          <input
+            matInput
+            placeholder="Filter by place"
+            [ngModel]="listFilter()"
+            (ngModelChange)="listFilter.set($event)"
+          />
+        </mat-form-field>
+
+        <div class="event-list">
+          @for (f of visibleFeatures(); track f.id) {
+            <button
+              class="event-item"
+              [class.selected]="selectedId() === f.id"
+              (click)="selectFeature(f)"
+              (dblclick)="openDetail(f)"
+            >
+              <span class="mag" [style.color]="magColor(f.properties.mag)">
+                {{ f.properties.mag | number: '1.1-1' }}
+              </span>
+              <span class="info">
+                <span class="place">{{ f.properties.place || 'Unknown location' }}</span>
+                <span class="meta">
+                  {{ relativeTime(f.properties.time) }} ·
+                  {{ f.geometry.coordinates[2] | number: '1.0-0' }} km deep
+                  @if (f.properties.tsunami === 1) {
+                    · <mat-icon class="mini-icon" matTooltip="Tsunami flag">waves</mat-icon>
+                  }
+                  @if (f.properties.alert) {
+                    · <span class="alert-dot" [style.background]="f.properties.alert"></span>
+                  }
+                </span>
+              </span>
+              <button
+                mat-icon-button
+                class="detail-btn"
+                matTooltip="Details"
+                (click)="openDetail(f); $event.stopPropagation()"
+              >
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </button>
+          } @empty {
+            <div class="empty-list">
+              {{ loading() ? 'Loading…' : 'No earthquakes match these filters.' }}
+            </div>
+          }
+        </div>
+
+        <div class="panel-footer">
+          <button mat-button (click)="exportCsv()">
+            <mat-icon>download</mat-icon> Export CSV
+          </button>
+          <button mat-button (click)="search()" [disabled]="loading()">
+            <mat-icon>refresh</mat-icon> Refresh
+          </button>
+        </div>
+      </aside>
+
+      <!-- Right: map -->
+      <div class="map-panel">
+        <app-earthquake-map
+          [features]="mapFeatures()"
+          [selectedId]="selectedId()"
+          [playbackTime]="playbackMode() ? cursor() : null"
+          [showPlates]="showPlates()"
+          (featureSelected)="openDetail($event)"
+          (platesError)="onPlatesError($event)"
+        />
+
+        <!-- Map controls -->
+        <div class="map-controls">
+          <button
+            mat-mini-fab
+            [color]="showPlates() ? 'primary' : undefined"
+            matTooltip="Tectonic plate boundaries"
+            (click)="togglePlates()"
+          >
+            <mat-icon>timeline</mat-icon>
+          </button>
+          <button mat-mini-fab matTooltip="3D depth view" (click)="openDepthView()">
+            <mat-icon>view_in_ar</mat-icon>
+          </button>
+          <button
+            mat-mini-fab
+            [color]="playbackMode() ? 'primary' : undefined"
+            matTooltip="Timeline playback"
+            (click)="togglePlayback()"
+          >
+            <mat-icon>slideshow</mat-icon>
+          </button>
+        </div>
+
+        <div class="legend">
+          <span class="legend-title">Magnitude</span>
+          <span><i style="background:#43a047"></i> &lt; 4</span>
+          <span><i style="background:#f9a825"></i> 4–5</span>
+          <span><i style="background:#fb8c00"></i> 5–6</span>
+          <span><i style="background:#e53935"></i> 6–7</span>
+          <span><i style="background:#6a1b9a"></i> 7+</span>
+        </div>
+
+        <!-- Timeline playback bar -->
+        @if (playbackMode()) {
+          <div class="timeline-bar">
+            <button mat-icon-button (click)="togglePlay()" [matTooltip]="playing() ? 'Pause' : 'Play'">
+              <mat-icon>{{ playing() ? 'pause' : 'play_arrow' }}</mat-icon>
+            </button>
+            <button mat-button class="speed" (click)="cycleSpeed()" matTooltip="Playback speed">
+              {{ playbackSpeed() }}×
+            </button>
+            <div class="slider-wrap">
+              <mat-slider
+                class="time-slider"
+                [min]="timeRange().min"
+                [max]="timeRange().max"
+                [step]="60000"
+                discrete
+                [displayWith]="formatTick"
+              >
+                <input matSliderThumb [value]="cursor()" (valueChange)="onScrub($event)" />
+              </mat-slider>
+            </div>
+            <span class="cursor-label">{{ cursor() | date: 'MMM d, HH:mm':'UTC' }} UTC</span>
+            <button mat-icon-button (click)="exitPlayback()" matTooltip="Exit playback">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

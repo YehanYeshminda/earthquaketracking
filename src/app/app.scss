@@ -1,0 +1,25 @@
+.app-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .brand-icon {
+    margin-right: 4px;
+  }
+
+  .brand {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+}
+
+.mat-mdc-menu-item .check {
+  margin-left: auto;
+}

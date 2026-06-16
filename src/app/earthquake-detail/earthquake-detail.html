@@ -1,0 +1,68 @@
+<h2 mat-dialog-title>
+  M{{ props.mag | number: '1.1-1' }} — {{ props.place || 'Unknown location' }}
+</h2>
+
+<mat-dialog-content class="detail-content">
+  <div class="row">
+    <span class="key">Time</span>
+    <span>{{ props.time | date: 'medium' }} ({{ props.time | date: 'yyyy-MM-dd HH:mm':'UTC' }} UTC)</span>
+  </div>
+  <mat-divider />
+
+  <div class="row">
+    <span class="key">Coordinates</span>
+    <span>{{ coords[1] | number: '1.4-4' }}, {{ coords[0] | number: '1.4-4' }}</span>
+  </div>
+  <div class="row">
+    <span class="key">Depth</span>
+    <span>{{ coords[2] | number: '1.1-2' }} km</span>
+  </div>
+  <mat-divider />
+
+  <div class="row">
+    <span class="key">Magnitude type</span>
+    <span>{{ props.magType || '—' }}</span>
+  </div>
+  <div class="row">
+    <span class="key">Significance</span>
+    <span>{{ props.sig }}</span>
+  </div>
+  <div class="row">
+    <span class="key">Felt reports</span>
+    <span>{{ props.felt ?? '—' }}</span>
+  </div>
+  <div class="row">
+    <span class="key">CDI / MMI</span>
+    <span>{{ props.cdi ?? '—' }} / {{ props.mmi ?? '—' }}</span>
+  </div>
+  <mat-divider />
+
+  <div class="row">
+    <span class="key">Alert</span>
+    <span>
+      @if (props.alert) {
+        <mat-chip [class]="'alert-' + props.alert">{{ props.alert }}</mat-chip>
+      } @else { — }
+    </span>
+  </div>
+  <div class="row">
+    <span class="key">Tsunami</span>
+    <span>{{ props.tsunami === 1 ? 'Yes' : 'No' }}</span>
+  </div>
+  <div class="row">
+    <span class="key">Status</span>
+    <span>{{ props.status }}</span>
+  </div>
+  <div class="row">
+    <span class="key">Network</span>
+    <span>{{ props.net | uppercase }} — {{ props.code }}</span>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <a mat-button [href]="props.url" target="_blank" rel="noopener">
+    <mat-icon>open_in_new</mat-icon>
+    View on USGS
+  </a>
+  <button mat-flat-button (click)="close()">Close</button>
+</mat-dialog-actions>
